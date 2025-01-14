@@ -76,8 +76,8 @@ The canister uses a `Message` variant to represent various error states:
 - `BudgetExceeded`
 - `InvalidDate`
 
+## Setup
 
-## Installation
 - [Installation](#installation)
 - [Deployment](#deployment)
 
@@ -131,12 +131,10 @@ dfx --version
 
 ## Deployment
 
-To create and deploy a simple sample application called `hello_world`:
+Clone repository and enter the project directory:
 
 ```bash
-# create a new default project called hello_world
-npx azle new hello_world
-cd hello_world
+cd decentralized-wedding-planning-platform
 ```
 
 ```bash
@@ -145,11 +143,11 @@ npm install
 ```
 
 ```bash
-# start up a local ICP replica
-dfx start --clean
+# start up a local ICP replica in the background
+dfx start --clean --background
 ```
 
-In a separate terminal in the `hello_world` directory:
+In a separate terminal in the `decentralized-wedding-planning-platform` directory:
 
 ```bash
 # deploy your canister

@@ -16,7 +16,9 @@ import {
   query,
   update,
   text,
+  Null,
 } from "azle/experimental";
+import { DECLARATION_TYPE_EXT } from "ts-jest";
 import { v4 as uuidv4 } from "uuid";
 
 /**
@@ -24,36 +26,27 @@ import { v4 as uuidv4 } from "uuid";
  */
 // Service Categories
 const Category = Variant({
-  Venue: text,
-  Catering: text,
-  Photography: text,
-  Music: text,
-  Decor: text,
-  Planning: text,
-  Attire: text,
-  Beauty: text,
-  Transport: text,
-  Stationery: text,
-  Cake: text,
-  Favors: text,
-  Other: text,
+  Venue: Null,
+  Catering: Null,
+  Photography: Null,
+  Music: Null,
+  Decor: Null,
+  Planning: Null,
+  Attire: Null,
+  Beauty: Null,
+  Transport: Null,
+  Stationery: Null,
+  Cake: Null,
+  Favors: Null,
+  Other: Null,
 });
 
 // Table Assignment Enum
 const TableAssignment = Variant({
-  VIPTable: text,
-  familyTable: text,
-  Table1: text,
-  Table2: text,
-  Table3: text,
-  Table4: text,
-  Table5: text,
-  Table6: text,
-  Table7: text,
-  Table8: text,
-  Table9: text,
-  Table10: text,
-  unassigned: text,
+  VIPTable: nat64,
+  FamilyTable: nat64,
+  Table: nat64,
+  Unassigned: Null,
 });
 
 /**
@@ -68,6 +61,27 @@ const Review = Record({
   date: nat64,
 });
 
+// Vendor Booking Status Enum
+const VendorBookingStatus = Variant({
+  Pending: Null,
+  Confirmed: Null,
+  Paid: Null,
+  Cancelled: text,
+});
+
+// Vendor Booking Record
+const VendorBooking = Record({
+  id: text,
+  vendorId: text,
+  weddingId: text,
+  weddingOffer: nat64,
+  additionalDetails: Opt(text),
+  status: VendorBookingStatus,
+  date: text,
+});
+
+type VendorBooking = typeof VendorBooking.tsType;
+
 // Vendor Details Record
 const Vendor = Record({
   id: text,
@@ -76,27 +90,23 @@ const Vendor = Record({
   category: Category,
   description: text,
   serviceCost: nat64,
-  availability: Vec(text), // ISO timestamps of available dates
+  bookedDates: Vec(text), // Dates already booked
   rating: nat64,
   reviews: Vec(Review),
-  bookings: Vec(Principal), // wedding IDs
+  bookings: Vec(VendorBooking),
   verified: bool,
   portfolio: Vec(text), // URLs to portfolio items
 });
 
 type Vendor = typeof Vendor.tsType;
 
-// Vendor Booking Record
-const VendorBooking = Record({
-  vendorId: text,
-  weddingId: text,
-  weddingOffer: nat64,
-  additionalDetails: Opt(text),
-  status: text, // "pending", "confirmed", "paid"
-  date: text,
-});
+const VendorResponse = Record({ message: text, vendor: Vendor });
 
-type VendorBooking = typeof VendorBooking.tsType;
+// Timeline Item Status Enum
+const TimelineItemStatus = Variant({
+  Pending: Null,
+  Completed: Null,
+});
 
 // Timeline Item Record
 const TimelineItem = Record({
@@ -104,10 +114,17 @@ const TimelineItem = Record({
   time: text,
   description: text,
   responsible: text,
-  status: text, // "pending", "completed"
+  status: TimelineItemStatus,
 });
 
 type TimelineItem = typeof TimelineItem.tsType;
+
+// Task Status Enum
+const TaskStatus = Variant({
+  Pending: Null,
+  InProgress: Null,
+  Completed: Null,
+});
 
 // Task Record
 const Task = Record({
@@ -116,17 +133,25 @@ const Task = Record({
   description: text,
   deadline: text,
   assignedTo: text,
-  status: text, // "pending", "in-progress", "completed"
+  status: TaskStatus, // "pending", "in-progress", "completed"
   budget: nat64,
 });
 
 type Task = typeof Task.tsType;
 
+// RSVP Status Enum
+const RSVPStatus = Variant({
+  Pending: Null,
+  Confirmed: Null,
+  Declined: text,
+});
+
 // Guest Details Record
 const Guest = Record({
+  id: text,
   name: text,
   guestEmail: text,
-  rsvpStatus: text, // "pending", "confirmed", "declined"
+  rsvpStatus: RSVPStatus, // "pending", "confirmed", "declined"
   dietaryRestrictions: text,
   plusOne: bool,
   tableAssignment: TableAssignment,
@@ -134,34 +159,62 @@ const Guest = Record({
 
 type Guest = typeof Guest.tsType;
 
+// Registry Item Status Enum
+const RegistryItemStatus = Variant({
+  Available: Null,
+  Purchased: Null,
+});
+
 // Registry Item Record
 const RegistryItem = Record({
   name: text,
   description: text,
   price: nat64,
-  status: text, // "available", "purchased"
+  status: RegistryItemStatus, // "available", "purchased"
   purchasedBy: text,
 });
 
 type RegistryItem = typeof RegistryItem.tsType;
 
+// Vendor Booking Reference Record
+const VendorBookingRef = Record({
+  id: text,
+  vendorId: text,
+});
+
+type VendorBookingRef = typeof VendorBookingRef.tsType;
+
+// Vendor Booking Status Enum
+const WeddingStatus = Variant({
+  Planning: text,
+  Upcoming: text,
+  Completed: text,
+});
+
 // Wedding Record with all details
 const Wedding = Record({
   id: text,
   coupleNames: Vec(text),
-  date: text,
+  date: text, // yyyy-mm-dd
   budget: nat64,
   location: text,
   guestCount: nat64,
-  vendors: Vec(VendorBooking),
   timeline: Vec(TimelineItem),
+  bookings: Vec(VendorBookingRef),
   tasks: Vec(Task),
   guestList: Vec(Guest),
   registry: Vec(RegistryItem),
-  status: text, // "planning", "upcoming", "completed"
+  status: WeddingStatus, // "planning", "upcoming", "completed"
 });
 
 type Wedding = typeof Wedding.tsType;
+
+const WeddingMessageResponse = Record({
+  message: text,
+  wedding: Wedding,
+});
+
+const WeddingResponse = Record({ message: text, wedding: Wedding });
 
 /**
  * Payload Definitions
@@ -173,14 +226,13 @@ const RegisterVendorPayload = Record({
   category: Category,
   description: text,
   serviceCost: nat64,
-  availability: Vec(text),
   portfolio: Vec(text),
 });
 
 // Wedding Planning Payload
 const CreateWeddingPayload = Record({
   coupleNames: Vec(text),
-  date: text,
+  date: text, // yyyy-mm-dd
   budget: nat64,
   location: text,
   guestCount: nat64,
@@ -195,11 +247,24 @@ const GuestRSVPPayload = Record({
   plusOne: bool,
 });
 
+const GuestRSVPResponse = Record({
+  message: text,
+  wedding: Wedding,
+  guest: Guest,
+});
+
 // Approve RSVP Payload
 const ApproveRSVPPayload = Record({
   weddingId: text,
-  guestEmail: text,
+  id: text, // Guest ID
   tableAssignment: TableAssignment,
+});
+
+// Decline RSVP Payload
+const DeclineRSVPPayload = Record({
+  weddingId: text,
+  id: text, // Guest ID
+  reason: text,
 });
 
 // Vendor Booking
@@ -208,6 +273,25 @@ const BookVendorPayload = Record({
   weddingId: text,
   weddingOffer: nat64,
   additionalDetails: Opt(text),
+});
+
+const BookVendorResponse = Record({
+  message: text,
+  wedding: Wedding,
+  vendor: Vendor,
+  booking: VendorBooking,
+});
+
+// Update Vendor Booking
+const UpdateVendorBookingPayload = Record({
+  id: text, // Booking ID
+  vendorId: text,
+  status: VendorBookingStatus,
+});
+
+const UpdateVendorBookingResponse = Record({
+  message: text,
+  booking: VendorBooking,
 });
 
 // selectVendorForService Payload
@@ -223,7 +307,6 @@ const AddTimelineItemPayload = Record({
   time: text,
   description: text,
   responsible: text,
-  status: text,
 });
 
 // Task Payload
@@ -236,11 +319,17 @@ const AddTaskPayload = Record({
   budget: nat64,
 });
 
+const TaskResponse = Record({
+  message: text,
+  wedding: Wedding,
+  task: Task,
+});
+
 // Update Task Status Payload
 const UpdateTaskStatusPayload = Record({
   weddingId: text,
   taskId: text,
-  status: text,
+  status: TaskStatus,
 });
 
 // Delete Task Payload
@@ -257,11 +346,17 @@ const AddRegistryItemPayload = Record({
   price: nat64,
 });
 
+const RegistryItemResponse = Record({
+  message: text,
+  wedding: Wedding,
+  registryItem: RegistryItem,
+});
+
 // Update Registry Item Status Payload
 const UpdateRegistryItemStatusPayload = Record({
   weddingId: text,
   itemName: text,
-  status: text,
+  status: RegistryItemStatus,
   purchasedBy: text,
 });
 
@@ -286,6 +381,7 @@ const Message = Variant({
   UnauthorizedAction: text,
   BudgetExceeded: text,
   InvalidDate: text,
+  Other: text,
 });
 
 type Message = typeof Message.tsType;
@@ -300,7 +396,7 @@ export default Canister({
    */
   registerVendor: update(
     [RegisterVendorPayload],
-    Result(Record({ message: text, vendor: Vendor }), Message),
+    Result(VendorResponse, Message),
     (payload) => {
       try {
         const vendorId = uuidv4();
@@ -316,6 +412,7 @@ export default Canister({
           reviews: [],
           bookings: [],
           verified: false,
+          bookedDates: [],
         };
 
         vendorStorage.insert(vendorId, createdVendor);
@@ -332,15 +429,7 @@ export default Canister({
 
   bookVendor: update(
     [BookVendorPayload],
-    Result(
-      Record({
-        message: text,
-        wedding: Wedding,
-        vendor: Vendor,
-        booking: VendorBooking,
-      }),
-      Message
-    ),
+    Result(BookVendorResponse, Message),
     (payload) => {
       try {
         const wedding = weddingStorage.get(payload.weddingId);
@@ -355,23 +444,40 @@ export default Canister({
         }
 
         // Check vendor availability
-        if (!vendor.availability.includes(wedding.date)) {
-          return Err({
-            DateUnavailable: "Vendor not available on wedding date",
-          });
+        if (vendor.bookedDates.includes(wedding.date)) {
+          return Err({ Other: "Vendor not available on the wedding date" });
+        }
+
+        // Check offer meets vendor's service cost
+        if (payload.weddingOffer < vendor.serviceCost) {
+          return Err({ Other: "Offer below vendor's service cost" });
         }
 
         const vendorBooking: VendorBooking = {
           ...payload,
-          status: "pending",
+          id: uuidv4(),
+          status: { Pending: null },
           date: wedding.date,
         };
 
+        // Update vendor's bookings
+        const updatedVendor = {
+          ...vendor,
+          bookings: [...vendor.bookings, vendorBooking],
+        };
+        vendorStorage.insert(payload.vendorId, updatedVendor);
+
+        // Update wedding's bookings
         const updatedWedding = {
           ...wedding,
-          vendors: [...wedding.vendors, vendorBooking],
+          bookings: [
+            ...wedding.bookings,
+            {
+              id: vendorBooking.id,
+              vendorId: vendor.id,
+            },
+          ],
         };
-
         weddingStorage.insert(payload.weddingId, updatedWedding);
 
         return Ok({
@@ -382,6 +488,67 @@ export default Canister({
         });
       } catch (error) {
         return Err({ UnauthorizedAction: `Booking failed: ${error}` });
+      }
+    }
+  ),
+
+  updateBookingStatus: update(
+    [UpdateVendorBookingPayload],
+    Result(UpdateVendorBookingResponse, Message),
+    (payload) => {
+      try {
+        const vendor = vendorStorage.get(payload.vendorId);
+
+        if (!vendor) {
+          return Err({ VendorNotFound: "Vendor not found" });
+        }
+
+        const booking = vendor.bookings.find((b) => b.id === payload.id);
+        if (!booking) {
+          return Err({ UnauthorizedAction: "Booking not found" });
+        }
+
+        // Check if the booking status is already the same
+        if (Object.keys(booking.status)[0] === Object.keys(payload.status)[0]) {
+          return Err({ UnauthorizedAction: "Booking status already set" });
+        }
+
+        // Check if it's already confirmed
+        if (booking.status.Confirmed !== null) {
+          return Err({ UnauthorizedAction: "Booking already confirmed" });
+        }
+
+        const updatedBooking: VendorBooking = {
+          ...booking,
+          status: payload.status,
+        };
+        vendor.bookings = vendor.bookings.map((b) =>
+          b.id === payload.id ? updatedBooking : b
+        );
+
+        // If confirmed update booked dates
+        if (payload.status.Confirmed === null) {
+          vendor.bookedDates.push(booking.date);
+          // Cancel other pending bookings on the same date
+          vendor.bookings = vendor.bookings.map((b) => {
+            if (b.date === booking.date && b.id !== booking.id) {
+              return {
+                ...b,
+                status: { Cancelled: "No longer available" },
+              };
+            }
+            return b;
+          });
+        }
+
+        vendorStorage.insert(payload.vendorId, vendor);
+
+        return Ok({
+          message: "Vendor booking updated successfully",
+          booking: updatedBooking,
+        });
+      } catch (error) {
+        return Err({ UnauthorizedAction: `Booking update failed: ${error}` });
       }
     }
   ),
@@ -399,48 +566,48 @@ export default Canister({
     return Ok(vendor);
   }),
 
-  // Get Vendors by Category
-  searchVendors: query([text], Result(Vec(Vendor), Message), (category) => {
-    try {
-      const matchingVendors = vendorStorage
-        .values()
-        .filter((vendor) => Object.keys(vendor.category)[0] === category);
+  // Get All Vendors and can search by Category
+  searchVendors: query(
+    [Opt(Category)],
+    Result(Vec(Vendor), Message),
+    (category) => {
+      try {
+        if (category && category.Some) {
+          const matchingVendors = vendorStorage
+            .values()
+            .filter(
+              (vendor) =>
+                Object.keys(vendor.category)[0] ===
+                Object.keys(category.Some)[0]
+            );
 
-      if (matchingVendors.length === 0) {
-        return Err({
-          VendorNotFound: `No vendors found in the '${category}' category`,
-        });
+          if (matchingVendors.length === 0) {
+            return Err({
+              VendorNotFound: `No vendors found in the selected category`,
+            });
+          }
+          return Ok(matchingVendors);
+        }
+        const allVendors = vendorStorage.values();
+        if (allVendors.length === 0) {
+          return Err({ VendorNotFound: "No vendors found" });
+        }
+        return Ok(allVendors);
+      } catch (error) {
+        return Err({ UnauthorizedAction: `Search failed: ${error}` });
       }
-
-      return Ok(matchingVendors);
-    } catch (error) {
-      return Err({ UnauthorizedAction: `Search failed: ${error}` });
     }
-  }),
-
-  // Get ALl Vendors
-  getAllVendors: query([], Result(Vec(Vendor), Message), () => {
-    const vendors = vendorStorage.values();
-
-    if (vendors.length === 0) {
-      // Return an empty array wrapped in Ok
-      return Ok([]);
-    }
-
-    // Return the list of vendors
-    return Ok(vendors);
-  }),
+  ),
 
   /**
    * Wedding Management
    */
   createWedding: update(
     [CreateWeddingPayload],
-    Result(Record({ message: text, wedding: Wedding }), Message),
+    Result(WeddingResponse, Message),
     (payload) => {
-      const time = new Date().toISOString();
       try {
-        if (payload.date < time) {
+        if (new Date(payload.date) < new Date()) {
           return Err({ InvalidDate: "Wedding date must be in the future" });
         }
 
@@ -449,12 +616,12 @@ export default Canister({
         const createdWedding: Wedding = {
           ...payload,
           id: weddingId,
-          vendors: [],
+          bookings: [],
           timeline: [],
           tasks: [],
           guestList: [],
           registry: [],
-          status: "planning",
+          status: { Planning: "Planning" },
         };
 
         weddingStorage.insert(weddingId, createdWedding);
@@ -492,26 +659,6 @@ export default Canister({
     return Ok(weddings);
   }),
 
-  // Get Wedding Timeline
-  getWeddingTimeline: query(
-    [text],
-    Result(Vec(TimelineItem), Message),
-    (weddingId) => {
-      const wedding = weddingStorage.get(weddingId);
-
-      if (!wedding) {
-        return Err({ WeddingNotFound: "Wedding not found" });
-      }
-
-      // Check if the timeline is empty
-      if (wedding.timeline.length === 0) {
-        return Err({ NoTimeLineItemsFound: "No timeline items for this wedding" });
-      }
-
-      return Ok(wedding.timeline);
-    }
-  ),
-
   /**
    * Guest Management
    * RSVP Submission
@@ -528,19 +675,18 @@ export default Canister({
   // Guest RSVP Submission
   submitGuestRSVP: update(
     [GuestRSVPPayload],
-    Result(
-      Record({
-        message: text,
-        wedding: Wedding,
-        newGuest: Guest,
-      }),
-      Message
-    ),
+    Result(GuestRSVPResponse, Message),
     (payload) => {
       try {
         const wedding = weddingStorage.get(payload.weddingId);
         if (!wedding) {
           return Err({ WeddingNotFound: "Wedding not found" });
+        }
+
+        // Check if email is valid using regex
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(payload.guestEmail)) {
+          return Err({ Other: "Invalid email address" });
         }
 
         // Check if the guest already exists
@@ -553,11 +699,20 @@ export default Canister({
           });
         }
 
+        // Check if the guest count exceeds the wedding's guest count
+        if (wedding.guestList.length >= wedding.guestCount) {
+          return Err({
+            BudgetExceeded:
+              "Guest count limit has been reached for this wedding",
+          });
+        }
+
         // Create the new guest RSVP
         const newGuest: Guest = {
+          id: uuidv4(),
           ...payload,
-          rsvpStatus: "pending", // Default RSVP status for submission
-          tableAssignment: { unassigned: "Unassigned" }, // Default table assignment
+          rsvpStatus: { Pending: null }, // Default RSVP status
+          tableAssignment: { Unassigned: null }, // Default table assignment
         };
 
         // Update the wedding's guest list
@@ -572,7 +727,7 @@ export default Canister({
         return Ok({
           message: "Guest RSVP submitted successfully",
           wedding: updatedWedding,
-          newGuest: newGuest,
+          guest: newGuest,
         });
       } catch (error) {
         return Err({
@@ -585,14 +740,7 @@ export default Canister({
   // Guest RSVP Approval and Table Assignment
   approveGuestRSVP: update(
     [ApproveRSVPPayload],
-    Result(
-      Record({
-        message: text,
-        wedding: Wedding,
-        updatedGuest: Guest,
-      }),
-      Message
-    ),
+    Result(GuestRSVPResponse, Message),
     (payload) => {
       try {
         const wedding = weddingStorage.get(payload.weddingId);
@@ -601,9 +749,7 @@ export default Canister({
         }
 
         // Find the guest in the wedding's guest list
-        const guest = wedding.guestList.find(
-          (g) => g.guestEmail === payload.guestEmail
-        );
+        const guest = wedding.guestList.find((g) => g.id === payload.id);
         if (!guest) {
           return Err({
             UnauthorizedAction: "Guest not found in the wedding list",
@@ -613,13 +759,13 @@ export default Canister({
         // Update the guest's RSVP status and table assignment
         const updatedGuest: Guest = {
           ...guest,
-          rsvpStatus: "confirmed",
+          rsvpStatus: { Confirmed: null },
           tableAssignment: { ...payload.tableAssignment },
         };
 
         // Update the wedding's guest list
         const updatedGuestList = wedding.guestList.map((g) =>
-          g.guestEmail === payload.guestEmail ? updatedGuest : g
+          g.id === payload.id ? updatedGuest : g
         );
 
         const updatedWedding: Wedding = {
@@ -633,10 +779,58 @@ export default Canister({
         return Ok({
           message: "RSVP approved and table assigned successfully",
           wedding: updatedWedding,
-          updatedGuest: updatedGuest,
+          guest: updatedGuest,
         });
       } catch (error) {
         return Err({ UnauthorizedAction: `Failed to approve RSVP: ${error}` });
+      }
+    }
+  ),
+
+  declineGuestRSVP: update(
+    [DeclineRSVPPayload],
+    Result(GuestRSVPResponse, Message),
+    (payload) => {
+      try {
+        const wedding = weddingStorage.get(payload.weddingId);
+        if (!wedding) {
+          return Err({ WeddingNotFound: "Wedding not found" });
+        }
+
+        // Find the guest in the wedding's guest list
+        const guest = wedding.guestList.find((g) => g.id === payload.id);
+        if (!guest) {
+          return Err({
+            UnauthorizedAction: "Guest not found in the wedding list",
+          });
+        }
+
+        // Update the guest's RSVP status
+        const updatedGuest: Guest = {
+          ...guest,
+          rsvpStatus: { Declined: payload.reason },
+        };
+
+        // Update the wedding's guest list
+        const updatedGuestList = wedding.guestList.map((g) =>
+          g.id === payload.id ? updatedGuest : g
+        );
+
+        const updatedWedding: Wedding = {
+          ...wedding,
+          guestList: updatedGuestList,
+        };
+
+        // Save the updated wedding
+        weddingStorage.insert(payload.weddingId, updatedWedding);
+
+        return Ok({
+          message: "RSVP declined successfully",
+          wedding: updatedWedding,
+          guest: updatedGuest,
+        });
+      } catch (error) {
+        return Err({ UnauthorizedAction: `Failed to decline RSVP: ${error}` });
       }
     }
   ),
@@ -678,7 +872,7 @@ export default Canister({
   // Guest RSVP Status
   getGuestRSVPStatus: query(
     [text, text], // [weddingId, guestEmail]
-    Result(text, Message),
+    Result(RSVPStatus, Message),
     (weddingId, guestEmail) => {
       const wedding = weddingStorage.get(weddingId);
       if (!wedding) {
@@ -709,24 +903,53 @@ export default Canister({
   /**
    * Timeline Item Management
    */
+
+  // Get Wedding Timeline
+  getWeddingTimeline: query(
+    [text],
+    Result(Vec(TimelineItem), Message),
+    (weddingId) => {
+      const wedding = weddingStorage.get(weddingId);
+
+      if (!wedding) {
+        return Err({ WeddingNotFound: "Wedding not found" });
+      }
+
+      // Check if the timeline is empty
+      if (wedding.timeline.length === 0) {
+        return Err({
+          NoTimeLineItemsFound: "No timeline items for this wedding",
+        });
+      }
+
+      return Ok(wedding.timeline);
+    }
+  ),
+
   addTimelineItem: update(
     [AddTimelineItemPayload],
-    Result(
-      Record({
-        message: text,
-        wedding: Wedding,
-      }),
-      Message
-    ),
+    Result(WeddingMessageResponse, Message),
     (payload) => {
       const wedding = weddingStorage.get(payload.weddingId);
       if (!wedding) {
         return Err({ WeddingNotFound: "Wedding not found" });
       }
 
+      // Check time not clashing
+      const known = wedding.timeline.find((item) => {
+        if (item.time === payload.time) {
+          return item;
+        }
+      });
+      if (known) {
+        return Err({
+          DateUnavailable: "Timeline item already exists at this time",
+        });
+      }
+
       const timelineItem: TimelineItem = {
         ...payload,
-        status: "pending",
+        status: { Pending: null },
       };
 
       const updatedWedding = {
@@ -750,14 +973,7 @@ export default Canister({
   // Add Task
   addTask: update(
     [AddTaskPayload],
-    Result(
-      Record({
-        message: text,
-        wedding: Wedding,
-        newTask: Task,
-      }),
-      Message
-    ),
+    Result(TaskResponse, Message),
     (payload) => {
       try {
         const wedding = weddingStorage.get(payload.weddingId);
@@ -771,7 +987,7 @@ export default Canister({
           description: payload.description,
           deadline: payload.deadline,
           assignedTo: payload.assignedTo,
-          status: "pending",
+          status: { Pending: null },
           budget: payload.budget,
         };
 
@@ -785,7 +1001,7 @@ export default Canister({
         return Ok({
           message: "Task added successfully",
           wedding: updatedWedding,
-          newTask,
+          task: newTask,
         });
       } catch (error) {
         return Err({ UnauthorizedAction: `Failed to add task: ${error}` });
@@ -796,14 +1012,7 @@ export default Canister({
   // Update Task Status
   updateTaskStatus: update(
     [UpdateTaskStatusPayload],
-    Result(
-      Record({
-        message: text,
-        wedding: Wedding,
-        updatedTask: Task,
-      }),
-      Message
-    ),
+    Result(TaskResponse, Message),
     (payload) => {
       try {
         const wedding = weddingStorage.get(payload.weddingId);
@@ -837,7 +1046,7 @@ export default Canister({
         return Ok({
           message: "Task status updated successfully",
           wedding: updatedWedding,
-          updatedTask,
+          task: updatedTask,
         });
       } catch (error) {
         return Err({
@@ -850,13 +1059,7 @@ export default Canister({
   // Delete Task
   deleteTask: update(
     [DeleteTaskPayload],
-    Result(
-      Record({
-        message: text,
-        wedding: Wedding,
-      }),
-      Message
-    ),
+    Result(WeddingMessageResponse, Message),
     (payload) => {
       try {
         const wedding = weddingStorage.get(payload.weddingId);
@@ -923,14 +1126,7 @@ export default Canister({
   // Add Registry Item
   addRegistryItem: update(
     [AddRegistryItemPayload],
-    Result(
-      Record({
-        message: text,
-        wedding: Wedding,
-        newRegistryItem: RegistryItem,
-      }),
-      Message
-    ),
+    Result(RegistryItemResponse, Message),
     (payload) => {
       try {
         const wedding = weddingStorage.get(payload.weddingId);
@@ -938,11 +1134,21 @@ export default Canister({
           return Err({ WeddingNotFound: "Wedding not found" });
         }
 
+        // Check if the item already exists
+        const existingItem = wedding.registry.find(
+          (item) => item.name === payload.name
+        );
+        if (existingItem) {
+          return Err({
+            Other: "Registry item already exists",
+          });
+        }
+
         const newRegistryItem: RegistryItem = {
           name: payload.name,
           description: payload.description,
           price: payload.price,
-          status: "available", // Default status for a new registry item
+          status: { Available: null }, // Default status
           purchasedBy: "", // Default empty purchaser
         };
 
@@ -956,7 +1162,7 @@ export default Canister({
         return Ok({
           message: "Registry item added successfully",
           wedding: updatedWedding,
-          newRegistryItem,
+          registryItem: newRegistryItem,
         });
       } catch (error) {
         return Err({
@@ -969,14 +1175,7 @@ export default Canister({
   // Update Registry Item Status (e.g., purchased)
   updateRegistryItemStatus: update(
     [UpdateRegistryItemStatusPayload],
-    Result(
-      Record({
-        message: text,
-        wedding: Wedding,
-        updatedRegistryItem: RegistryItem,
-      }),
-      Message
-    ),
+    Result(RegistryItemResponse, Message),
     (payload) => {
       try {
         const wedding = weddingStorage.get(payload.weddingId);
@@ -1011,7 +1210,7 @@ export default Canister({
         return Ok({
           message: "Registry item status updated successfully",
           wedding: updatedWedding,
-          updatedRegistryItem,
+          registryItem: updatedRegistryItem,
         });
       } catch (error) {
         return Err({
@@ -1024,13 +1223,7 @@ export default Canister({
   // Delete Registry Item
   deleteRegistryItem: update(
     [DeleteRegistryItemPayload],
-    Result(
-      Record({
-        message: text,
-        wedding: Wedding,
-      }),
-      Message
-    ),
+    Result(WeddingMessageResponse, Message),
     (payload) => {
       try {
         const wedding = weddingStorage.get(payload.weddingId);
